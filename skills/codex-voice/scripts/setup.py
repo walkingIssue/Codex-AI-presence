@@ -13,6 +13,8 @@ import urllib.request
 import venv
 from pathlib import Path
 
+from session_scope import ensure_state_file
+
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_ROOT = Path(__file__).resolve().parent
@@ -32,6 +34,7 @@ orb.enabled
 kokoro-v1.0*.onnx
 voices-v1.0.bin
 gpu_patch/*.onnx
+sessions.json
 """
 ORB_FILES = (
     "index.html",
@@ -288,6 +291,7 @@ def main() -> int:
     voice_root = project_root / ".codex-voice"
     voice_root.mkdir(parents=True, exist_ok=True)
     write_default(voice_root / ".gitignore", VOICE_GITIGNORE)
+    ensure_state_file(voice_root)
 
     model = voice_root / MODEL_NAME
     voices = voice_root / VOICES_NAME

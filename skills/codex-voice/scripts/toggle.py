@@ -10,6 +10,16 @@ import sys
 import time
 from pathlib import Path
 
+from session_scope import (
+    current_thread_id,
+    is_project_mode,
+    load_state,
+    register_session,
+    registered_session_ids,
+    set_project_mode,
+    unregister_session,
+)
+
 
 WATCHER_SCRIPT = Path(__file__).with_name("watcher.py")
 
@@ -173,6 +183,24 @@ def stop_watcher(voice_root: Path) -> None:
         pass
 
 
+def restart_watcher(voice_root: Path) -> None:
+    if watcher_is_running(voice_root):
+        stop_watcher(voice_root)
+        time.sleep(0.5)
+    start_watcher(voice_root)
+
+
+def require_thread_id() -> str | None:
+    thread_id = current_thread_id()
+    if thread_id is None:
+        print(
+            "No CODEX_THREAD_ID was found. Run this from a Codex session, "
+            "or use project-on for project-wide voice.",
+            file=sys.stderr,
+        )
+    return thread_id
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -180,6 +208,12 @@ def main() -> int:
         choices=(
             "on",
             "off",
+            "session-on",
+            "session-off",
+            "project-on",
+            "project-off",
+            "all-on",
+            "all-off",
             "stream",
             "quality",
             "provider-cpu",
@@ -202,16 +236,58 @@ def main() -> int:
         return 2
 
     marker = voice_root / "enabled"
-    if args.operation == "on":
+    project_root = voice_root.parent
+
+    if args.operation in {"on", "session-on"}:
+        thread_id = require_thread_id()
+        if thread_id is None:
+            return 2
+        state = register_session(voice_root, project_root, thread_id)
         marker.write_text("on\n", encoding="utf-8")
-        start_watcher(voice_root)
-        print(f"Codex voice: on ({voice_root})")
+        restart_watcher(voice_root)
+        print(
+            f"Codex voice: on for this session ({voice_root}; "
+            f"registered sessions: {len(registered_session_ids(state))})"
+        )
         return 0
 
-    if args.operation == "off":
+    if args.operation in {"project-on", "all-on"}:
+        set_project_mode(voice_root)
+        marker.write_text("on\n", encoding="utf-8")
+        restart_watcher(voice_root)
+        print(f"Codex voice: on for all sessions in {project_root} ({voice_root})")
+        return 0
+
+    if args.operation in {"off", "project-off", "all-off"}:
         marker.unlink(missing_ok=True)
         stop_watcher(voice_root)
         print(f"Codex voice: off ({voice_root})")
+        return 0
+
+    if args.operation == "session-off":
+        thread_id = require_thread_id()
+        if thread_id is None:
+            return 2
+        current_state = load_state(voice_root)
+        if is_project_mode(current_state):
+            print(
+                "Codex voice is currently project-scoped; use project-off "
+                "before switching to individual sessions.",
+                file=sys.stderr,
+            )
+            return 2
+        state = unregister_session(voice_root, thread_id)
+        ids = registered_session_ids(state)
+        if ids:
+            marker.write_text("on\n", encoding="utf-8")
+            restart_watcher(voice_root)
+        else:
+            marker.unlink(missing_ok=True)
+            stop_watcher(voice_root)
+        print(
+            f"Codex voice: session removed ({voice_root}; "
+            f"registered sessions: {len(ids)})"
+        )
         return 0
 
     if args.operation in {"stream", "quality"}:
@@ -333,10 +409,17 @@ def main() -> int:
         provider = "directml"
     else:
         provider = "cpu"
+    scope_state = load_state(voice_root)
+    scope = "project" if is_project_mode(scope_state) else "session"
+    registered = registered_session_ids(scope_state)
+    thread_id = current_thread_id()
+    registration = "n/a" if thread_id is None else "yes" if thread_id in registered else "no"
+    registered_count = "all matching" if is_project_mode(scope_state) else str(len(registered))
     print(
         f"Codex voice: {'on' if enabled else 'off'} "
         f"({voice_root}; mode: {mode}; speed: {speed}; progress: {progress}; "
-        f"provider: {provider}; desktop watcher: {watcher})"
+        f"provider: {provider}; scope: {scope}; registered sessions: {registered_count}; "
+        f"current session registered: {registration}; desktop watcher: {watcher})"
     )
     return 0
 

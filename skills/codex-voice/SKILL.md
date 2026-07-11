@@ -1,6 +1,6 @@
 ---
 name: codex-voice
-description: Set up and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex. Use when the user asks to enable, disable, configure, install, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
+description: Set up and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex, with per-session or project-wide scope. Use when the user asks to enable, disable, configure, install, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
 ---
 
 # Codex AI Presence
@@ -13,17 +13,26 @@ project-local and does not modify other Python environments.
 If the active project has no `.codex-voice` directory, run:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --enable
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py"
 ```
 
 Use `--force` only when setup reports a different existing `.codex/hooks/speak.py`.
 Use `--no-orb` when the machine should not install the optional Electron orb.
 
+After setup, ask the user which voice scope they want before enabling it:
+
+> Should voice apply only to this Codex session, or to all sessions in this project?
+
+Use `session-on` for the current session or `project-on` for all sessions whose
+rollout belongs to the active project. Do not silently choose project-wide
+voice. If the user already specified a scope, use that choice without asking
+again.
+
 Provider setup options:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --cuda --enable
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml --enable
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --cuda
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml
 ```
 
 CPU is the validated baseline. The NVIDIA CUDA path uses a separate
@@ -38,8 +47,12 @@ Do not describe the DirectML patch as an upstream Kokoro contribution yet.
 Run the requested operation:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" on
-python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" session-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" session-off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" project-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" project-off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" on             # alias for session-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" off            # alias for project-off
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" stream
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" quality
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" provider-cpu
@@ -55,6 +68,12 @@ python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" status
 
 Report the resulting state briefly. The skill controls future responses; it
 does not speak the current response directly.
+
+`session-on` registers the current `CODEX_THREAD_ID` in the project-local
+`.codex-voice/sessions.json` file. `session-off` removes only the current
+session. `project-on` is the explicit always-on mode for every matching
+session in the project. The registration file is runtime state and is ignored
+by the generated `.codex-voice/.gitignore`.
 
 `stream` starts playback as Kokoro chunks arrive. `quality` buffers the full
 waveform first. Visible progress commentary is optional and is spoken at half
