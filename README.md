@@ -10,9 +10,9 @@ The Strand Orb is the optional transparent Electron/WebGL companion window for t
 
 | Idle | Speaking |
 | --- | --- |
-| ![Strand Orb idle state](html/media/screenshots/orb-idle.png) | ![Strand Orb speaking state](html/media/screenshots/orb-speaking.png) |
+| ![Strand Orb idle state](https://raw.githubusercontent.com/walkingIssue/Codex-AI-presence-pages/main/media/screenshots/orb-idle.png) | ![Strand Orb speaking state](https://raw.githubusercontent.com/walkingIssue/Codex-AI-presence-pages/main/media/screenshots/orb-speaking.png) |
 
-The visual is intentionally small enough to sit beside an editor while still making the voice state legible at a glance.
+The visual is intentionally small enough to sit beside an editor while still making the voice state legible at a glance. See the complete [Codex AI Presence showcase](https://walkingissue.github.io/Codex-AI-presence-pages/).
 
 ## Install the skill
 
@@ -27,7 +27,8 @@ Or use the preinstalled skill installer directly:
 ```powershell
 python "$HOME/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py" `
   --repo walkingIssue/Codex-AI-presence `
-  --path skills/codex-voice
+  --path skills/codex-voice `
+  --method git
 ```
 
 ## Set up a project
