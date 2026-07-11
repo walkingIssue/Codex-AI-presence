@@ -17,7 +17,16 @@ if (Test-Path -LiteralPath $pidPath -PathType Leaf) {
 }
 
 if (-not (Test-Path -LiteralPath $electron -PathType Leaf)) {
-    throw "Strand Orb dependencies are not installed. Run npm install in $orbRoot"
+    $node = Get-Command node -ErrorAction SilentlyContinue
+    $installScript = Join-Path $orbRoot "node_modules\electron\install.js"
+    if ($null -ne $node -and (Test-Path -LiteralPath $installScript -PathType Leaf)) {
+        Write-Host "Electron runtime is missing; running Electron's installer..."
+        & $node.Source $installScript
+    }
+}
+
+if (-not (Test-Path -LiteralPath $electron -PathType Leaf)) {
+    throw "Strand Orb Electron runtime is unavailable. Run npm ci in $orbRoot and retry."
 }
 
 $appArgument = '"' + $orbRoot + '"'

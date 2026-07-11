@@ -136,6 +136,8 @@ code { color: var(--cyan); font-family: "SFMono-Regular", Consolas, monospace; f
 .media-slot { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 270px; padding: 18px; overflow: hidden; border: 1px solid var(--line); background: var(--panel-strong); }
 .media-slot::before { position: absolute; inset: 0; content: ""; opacity: .8; background: radial-gradient(circle at 70% 35%, rgba(143, 244, 228, .18), transparent 35%), linear-gradient(135deg, transparent 30%, rgba(141, 183, 255, .06)); }
 .media-slot > * { position: relative; z-index: 1; }
+.media-video { position: absolute !important; inset: 0; z-index: 0 !important; width: 100%; height: 100%; border: 0; object-fit: cover; background: #050d10; }
+.media-slot:has(.media-video)::before { z-index: 1; background: linear-gradient(180deg, rgba(4, 12, 15, .08), rgba(4, 12, 15, .74)); }
 .media-slot-install { min-height: 325px; background-color: #0c2023; }
 .media-slot-orb { background-color: #17172a; }
 .media-slot-arc { background-color: #17231c; }

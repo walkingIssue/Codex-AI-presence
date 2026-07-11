@@ -10,11 +10,13 @@ Then open <http://localhost:8080>.
 
 ## Add recordings
 
-Place finished videos in `media/videos/` using these names, or update the labels in `index.html`:
+The showcase currently embeds these compressed recordings from `media/videos/`:
 
 - `installation.mp4` — fresh checkout through first working response
-- `orb-playback.mp4` — audio playback driving the strand orb
-- `intel-arc.mp4` — Intel Arc DirectML setup and inference
+- `voice-swap.mp4` — changing the local Kokoro voice
+- `other-instance.mp4` — the presence workflow in another Codex instance
+
+Replace or add recordings using the same names, or update the `<source>` paths in `index.html`.
 
 Still images can go in `media/screenshots/`. The repository did not retain the old voice/orb debugging screenshots, so the first version uses designed media placeholders rather than unrelated local images. Replace those placeholders with verified screenshots or video poster frames when the recordings are ready.
 

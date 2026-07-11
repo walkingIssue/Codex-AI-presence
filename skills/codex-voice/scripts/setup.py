@@ -96,6 +96,33 @@ def write_default(path: Path, value: str) -> None:
         path.write_text(value, encoding="utf-8")
 
 
+def electron_binary(orb_root: Path) -> Path:
+    if os.name == "nt":
+        return orb_root / "node_modules" / "electron" / "dist" / "electron.exe"
+    if sys.platform == "darwin":
+        return orb_root / "node_modules" / "electron" / "dist" / "Electron.app" / "Contents" / "MacOS" / "Electron"
+    return orb_root / "node_modules" / "electron" / "dist" / "electron"
+
+
+def repair_electron_runtime(orb_root: Path) -> bool:
+    """Run Electron's postinstall explicitly when npm skipped the binary download."""
+    binary = electron_binary(orb_root)
+    if binary.is_file():
+        return True
+
+    install_script = orb_root / "node_modules" / "electron" / "install.js"
+    node = shutil.which("node")
+    if node is None or not install_script.is_file():
+        return False
+
+    print("Electron runtime is missing; running Electron's installer...")
+    run([node, str(install_script)], cwd=orb_root, check=False)
+    if binary.is_file():
+        print(f"Electron runtime ready: {binary}")
+        return True
+    return False
+
+
 def install_hook(project_root: Path, voice_root: Path, force: bool) -> None:
     hooks_dir = project_root / ".codex" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
@@ -176,6 +203,11 @@ def install_orb(voice_root: Path, skip: bool) -> None:
     result = run([npm, "ci"], cwd=destination, check=False)
     if result.returncode != 0:
         print("Orb dependency installation failed; voice setup is still usable.")
+    if not repair_electron_runtime(destination):
+        print(
+            "Electron's platform binary is unavailable; voice setup is still usable, "
+            "but the orb needs a successful npm install and Electron download."
+        )
 
 
 def install_start_script(voice_root: Path) -> None:
