@@ -43,6 +43,39 @@ The setup creates an isolated project-local runtime, downloads the INT8 model an
 
 The machine needs `ffplay` on `PATH` for playback. Node.js/npm are optional unless the Strand Orb is wanted.
 
+## Configuration
+
+The project-local runtime exposes one complete configuration surface:
+
+| Setting | Available values | Default |
+| --- | --- | --- |
+| Voice / timbre | Installed Kokoro voice ID, for example `bf_isabella` | `bf_isabella` |
+| Speed | `0.5` to `2.0` | `1.08` |
+| Playback | `stream` or `quality` | `stream` |
+| Provider | `cpu`, `cuda`, or `directml` | `cpu` |
+| Volume | `0` to `100` percent | `20` percent |
+| Commentary volume | `0` to `100` percent of the main volume | `50` percent |
+| Visible progress | `on` or `off` | `off` |
+| Strand Orb | `on` or `off` | optional/off |
+| Scope | `session`, `project`, or `off` | chosen when enabled |
+
+Show the current matrix and effective values:
+
+```powershell
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" show
+```
+
+Walk through every setting interactively or apply selected values directly:
+
+```powershell
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" interactive
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" set --voice bf_isabella --speed 1.08 --mode stream --volume 20 --commentary-volume 50
+```
+
+Visible progress commentary uses the configured commentary-volume ratio of the
+main response volume. CUDA and DirectML selections are checked against their
+installed project-local runtimes before they are activated.
+
 ## Providers
 
 CPU is the default and is the validated baseline.
@@ -80,6 +113,7 @@ python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" provider-cuda
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" provider-directml
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" progress-on
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" orb-on
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" show
 ```
 
 `session-on` registers the current Codex thread in `.codex-voice/sessions.json`. `project-on` is the explicit always-on mode for all matching sessions in the project.

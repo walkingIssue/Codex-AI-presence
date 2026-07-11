@@ -1,6 +1,6 @@
 ---
 name: codex-voice
-description: Set up and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex, with per-session or project-wide scope. Use when the user asks to enable, disable, configure, install, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
+description: Set up and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex, with full voice, speed, volume, commentary-volume, playback, scope, progress, and provider configuration. Use when the user asks to enable, disable, configure, install, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
 ---
 
 # Codex AI Presence
@@ -42,6 +42,41 @@ path uses a separate `.dml-venv` and a generated local graph patch. The setup
 pulls the maintained [Intel Arc Kokoro fork](https://github.com/walkingIssue/kokoro-onnx-intel-arc/tree/intel-arc-directml).
 Do not describe the DirectML patch as an upstream Kokoro contribution yet.
 
+## Configuration
+
+When the user asks what can be changed, run the complete matrix first:
+
+```powershell
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" show
+```
+
+| Setting | Values | Default |
+| --- | --- | --- |
+| Voice / timbre | Any installed Kokoro voice ID, such as `bf_isabella` | `bf_isabella` |
+| Speed | `0.5` to `2.0` | `1.08` |
+| Playback | `stream` or `quality` | `stream` |
+| Provider | `cpu`, `cuda`, or `directml` | `cpu` |
+| Volume | `0` to `100` percent | `20` percent |
+| Commentary volume | `0` to `100` percent of the main volume | `50` percent |
+| Visible progress | `on` or `off` | `off` |
+| Strand Orb | `on` or `off` | optional/off |
+| Scope | `session`, `project`, or `off` | chosen at enable time |
+
+Use the deterministic command for direct changes, or `interactive` for a
+guided pass through every setting:
+
+```powershell
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" interactive
+python "$HOME/.codex/skills/codex-voice/scripts/configure.py" set --voice bf_isabella --speed 1.08 --mode stream --volume 20 --commentary-volume 50
+```
+
+`configure.py` validates provider readiness before selecting CUDA or DirectML,
+and `scope session` requires the current `CODEX_THREAD_ID`. Visible progress
+uses the configured commentary-volume ratio of the main response volume.
+Environment variables such as
+`CODEX_TTS_VOICE` and `CODEX_TTS_SPEED` override project markers for advanced
+use; prefer the configure command for normal project-local changes.
+
 ## Controls
 
 Run the requested operation:
@@ -76,8 +111,8 @@ session in the project. The registration file is runtime state and is ignored
 by the generated `.codex-voice/.gitignore`.
 
 `stream` starts playback as Kokoro chunks arrive. `quality` buffers the full
-waveform first. Visible progress commentary is optional and is spoken at half
-volume; never speak hidden reasoning or raw tool output.
+waveform first. Visible progress commentary is optional and uses the configured
+commentary-volume ratio; never speak hidden reasoning or raw tool output.
 
 The watcher uses the persistent worker and the provider selected in the
 project's `.codex-voice/provider` marker. Keep the base model and voice bundle

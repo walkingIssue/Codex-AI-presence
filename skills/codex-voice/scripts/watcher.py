@@ -11,6 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from configuration import configured_commentary_volume
 from session_scope import (
     is_project_mode,
     load_state,
@@ -135,10 +136,16 @@ def progress_enabled(voice_root: Path) -> bool:
     return value in {"1", "true", "on", "enabled"}
 
 
-def configured_volume() -> int:
+def configured_volume(voice_root: Path) -> int:
     try:
-        value = int(os.environ.get("CODEX_TTS_VOLUME", "20"))
+        environment_volume = os.environ.get("CODEX_TTS_VOLUME")
+        if environment_volume:
+            value = int(environment_volume)
+        else:
+            value = int(voice_root.joinpath("volume").read_text(encoding="utf-8").strip())
     except ValueError:
+        value = 20
+    except OSError:
         value = 20
     return max(0, min(100, value))
 
@@ -463,7 +470,8 @@ def main() -> int:
                     key = (str(path), str(record.get("timestamp")), "commentary", commentary)
                     if key not in seen:
                         seen.add(key)
-                        volume = round(configured_volume() * 0.5)
+                        commentary_ratio = configured_commentary_volume(voice_root) / 100
+                        volume = round(configured_volume(voice_root) * commentary_ratio)
                         log(voice_root, f"speaking visible commentary at {volume}%: {len(commentary)} characters")
                         speak(
                             project_root,
