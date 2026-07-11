@@ -31,6 +31,8 @@ VOICE_GITIGNORE = """.venv/
 *.pid
 orb/node_modules/
 orb.enabled
+volume
+commentary-volume
 kokoro-v1.0*.onnx
 voices-v1.0.bin
 gpu_patch/*.onnx
@@ -315,6 +317,8 @@ def main() -> int:
     write_default(voice_root / "voice", "bf_isabella\n")
     write_default(voice_root / "mode", "stream\n")
     write_default(voice_root / "speed", "1.08\n")
+    write_default(voice_root / "volume", "20\n")
+    write_default(voice_root / "commentary-volume", "50\n")
     (voice_root / "provider").write_text(provider + "\n", encoding="utf-8")
     if args.enable:
         (voice_root / "enabled").write_text("on\n", encoding="utf-8")

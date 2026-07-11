@@ -29,12 +29,14 @@ VOICE_CONFIG_PATH = VOICE_ROOT / "voice"
 MODE_CONFIG_PATH = VOICE_ROOT / "mode"
 SPEED_CONFIG_PATH = VOICE_ROOT / "speed"
 PROVIDER_CONFIG_PATH = VOICE_ROOT / "provider"
+VOLUME_CONFIG_PATH = VOICE_ROOT / "volume"
 ORB_ENABLED_MARKER = VOICE_ROOT / "orb.enabled"
 DEFAULT_ORB_PORT = 17831
-DEFAULT_VOICE = "af_heart"
+DEFAULT_VOICE = "bf_isabella"
 DEFAULT_MODE = "stream"
-DEFAULT_SPEED = 1.0
+DEFAULT_SPEED = 1.08
 DEFAULT_PROVIDER = "cpu"
+DEFAULT_VOLUME = 20
 _TTS_CACHE = None
 
 
@@ -131,6 +133,20 @@ def configured_speed() -> float:
         except (OSError, ValueError):
             value = DEFAULT_SPEED
     return max(0.5, min(2.0, value))
+
+
+def configured_volume() -> int:
+    environment_volume = os.environ.get("CODEX_TTS_VOLUME")
+    try:
+        value = int(environment_volume) if environment_volume else None
+    except ValueError:
+        value = None
+    if value is None:
+        try:
+            value = int(VOLUME_CONFIG_PATH.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            value = DEFAULT_VOLUME
+    return max(0, min(100, value))
 
 
 def configured_provider() -> str:
@@ -400,8 +416,7 @@ def stream_audio(text: str) -> None:
 
     voice = configured_voice()
     speed = configured_speed()
-    volume = int(os.environ.get("CODEX_TTS_VOLUME", "20"))
-    volume = max(0, min(100, volume))
+    volume = configured_volume()
     tts = get_tts()
     orb = orb_socket()
 
@@ -473,8 +488,7 @@ def stream_audio(text: str) -> None:
 def play_audio(audio_path: Path) -> None:
     ffplay = shutil.which("ffplay")
     if ffplay:
-        volume = int(os.environ.get("CODEX_TTS_VOLUME", "20"))
-        volume = max(0, min(100, volume))
+        volume = configured_volume()
         if orb_is_enabled():
             player: subprocess.Popen[bytes] | None = None
             timeline: OrbPlaybackTimeline | None = None

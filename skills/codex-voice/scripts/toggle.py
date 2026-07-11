@@ -10,6 +10,7 @@ import sys
 import time
 from pathlib import Path
 
+from configuration import load_settings, marker_enabled
 from session_scope import (
     current_thread_id,
     is_project_mode,
@@ -379,36 +380,17 @@ def main() -> int:
         )
         return 0
 
-    enabled = marker.is_file() and marker.read_text(encoding="utf-8").strip().lower() in {
-        "1",
-        "true",
-        "on",
-        "enabled",
-    }
+    enabled = marker_enabled(marker)
     watcher = "running" if watcher_is_running(voice_root) else "stopped"
-    try:
-        mode = (voice_root / "mode").read_text(encoding="utf-8").strip().lower()
-    except OSError:
-        mode = "stream"
-    try:
-        speed = (voice_root / "speed").read_text(encoding="utf-8").strip()
-    except OSError:
-        speed = "1.0"
-    try:
-        progress = (voice_root / "progress").read_text(encoding="utf-8").strip().lower()
-    except OSError:
-        progress = "off"
-    progress = "on" if progress in {"1", "true", "on", "enabled"} else "off"
-    try:
-        provider = (voice_root / "provider").read_text(encoding="utf-8").strip().lower()
-    except OSError:
-        provider = "cpu"
-    if provider in {"cuda", "cudaexecutionprovider", "nvidia", "nvidia-cuda"}:
-        provider = "cuda"
-    elif provider in {"directml", "dml", "gpu"}:
-        provider = "directml"
-    else:
-        provider = "cpu"
+    settings = load_settings(voice_root)
+    mode = settings["mode"]
+    speed = settings["speed"]
+    progress = "on" if settings["progress"] else "off"
+    provider = settings["provider"]
+    voice = settings["voice"]
+    volume = settings["volume"]
+    commentary_volume = settings["commentary_volume"]
+    orb = "on" if settings["orb"] else "off"
     scope_state = load_state(voice_root)
     scope = "project" if is_project_mode(scope_state) else "session"
     registered = registered_session_ids(scope_state)
@@ -417,8 +399,10 @@ def main() -> int:
     registered_count = "all matching" if is_project_mode(scope_state) else str(len(registered))
     print(
         f"Codex voice: {'on' if enabled else 'off'} "
-        f"({voice_root}; mode: {mode}; speed: {speed}; progress: {progress}; "
-        f"provider: {provider}; scope: {scope}; registered sessions: {registered_count}; "
+        f"({voice_root}; voice: {voice}; speed: {speed}; mode: {mode}; "
+        f"volume: {volume}%; commentary volume: {commentary_volume}%; "
+        f"progress: {progress}; orb: {orb}; provider: {provider}; "
+        f"scope: {scope}; registered sessions: {registered_count}; "
         f"current session registered: {registration}; desktop watcher: {watcher})"
     )
     return 0
