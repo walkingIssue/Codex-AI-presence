@@ -1,0 +1,7 @@
+# Local/runtime state is created by setup.py in the active project.
+__pycache__/
+*.pyc
+*.log
+*.wav
+*.pid
+node_modules/
