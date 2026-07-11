@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071016">
+  <meta name="description" content="Codex AI Presence gives a local coding agent a voice and a visual presence.">
+  <title>Codex AI Presence</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Codex AI Presence home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>CODEX AI PRESENCE</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#media">Media</a>
+        <a href="https://github.com/walkingIssue/Codex-AI-presence" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> LOCAL / FAST / ALIVE</p>
+          <h1>Give your coding agent a <em>voice.</em></h1>
+          <p class="lede">A Codex skill that routes responses through a local Kokoro voice worker and turns the audio waveform into a living visual presence.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#install">Get started <span aria-hidden="true">↓</span></a>
+            <a class="button button-quiet" href="#media">Watch the build <span aria-hidden="true">↘</span></a>
+          </div>
+          <div class="proof-strip" aria-label="Project qualities">
+            <span><b>01</b> on-device audio</span>
+            <span><b>02</b> GPU-ready paths</span>
+            <span><b>03</b> Codex-native setup</span>
+          </div>
+        </div>
+
+        <div class="presence-card">
+          <div class="presence-card-top">
+            <span class="card-label">PRESENCE / PREVIEW</span>
+            <span class="state-pill" id="presenceState"><span></span> IDLE</span>
+          </div>
+          <div class="orb-stage">
+            <div class="orb-grid" aria-hidden="true"></div>
+            <canvas id="presenceCanvas" aria-label="Animated strand orb preview"></canvas>
+            <div class="orb-caption"><span>01</span><span>LOCAL AUDIO REACTIVE</span><span>∞</span></div>
+          </div>
+          <div class="presence-card-bottom">
+            <p>The response arrives as sound, then becomes geometry.</p>
+            <button class="button button-small" id="demoButton" type="button">Simulate speech <span aria-hidden="true">◌</span></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="metric-row" aria-label="Project highlights">
+        <div class="metric"><strong>0</strong><span>cloud audio calls</span></div>
+        <div class="metric"><strong>1</strong><span>persistent voice worker</span></div>
+        <div class="metric"><strong>3</strong><span>inference routes</span></div>
+        <div class="metric"><strong>∞</strong><span>ways to make it yours</span></div>
+      </section>
+
+      <section class="content-section" id="how-it-works">
+        <div class="section-heading">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> THE LOOP</p>
+          <h2>From response to presence.</h2>
+          <p>Keep the agentic workflow you already use. Add a local voice and a small, expressive window that lets you feel when the system is thinking and speaking.</p>
+        </div>
+        <div class="pipeline">
+          <article class="pipeline-step">
+            <span class="step-number">01</span>
+            <div class="step-icon">⌁</div>
+            <h3>Codex response</h3>
+            <p>Codex produces the answer and the skill watches the response stream.</p>
+          </article>
+          <div class="pipeline-line" aria-hidden="true">→</div>
+          <article class="pipeline-step">
+            <span class="step-number">02</span>
+            <div class="step-icon">◒</div>
+            <h3>Kokoro worker</h3>
+            <p>A warm local worker renders speech in chunks, without a cloud audio hop.</p>
+          </article>
+          <div class="pipeline-line" aria-hidden="true">→</div>
+          <article class="pipeline-step">
+            <span class="step-number">03</span>
+            <div class="step-icon">✳</div>
+            <h3>Strand orb</h3>
+            <p>The same waveform drives playback and geometry in the presence window.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="split-section">
+        <div class="feature-intro">
+          <p class="eyebrow"><span class="eyebrow-dot"></span> BUILT FOR ITERATION</p>
+          <h2>Quiet when you need focus. Alive when you want company.</h2>
+          <p>Voice is optional, local, and configurable. The visual layer is intentionally small enough to live beside your editor and expressive enough to feel present.</p>
+        </div>
+        <div class="feature-list">
+          <article class="feature-item"><span class="feature-index">A</span><div><h3>Warm worker</h3><p>Keep the model loaded between responses so the second sentence does not feel like a cold start.</p></div><span class="feature-arrow">↗</span></article>
+          <article class="feature-item"><span class="feature-index">B</span><div><h3>Stream or quality</h3><p>Choose early playback for immediacy or completed rendering for a more polished read.</p></div><span class="feature-arrow">↗</span></article>
+          <article class="feature-item"><span class="feature-index">C</span><div><h3>CPU, CUDA, Arc</h3><p>Keep the common CPU and NVIDIA paths open, with a maintained Intel Arc DirectML route.</p></div><span class="feature-arrow">↗</span></article>
+        </div>
+      </section>
+
+      <section class="content-section media-section" id="media">
+        <div class="section-heading media-heading">
+          <div>
+            <p class="eyebrow"><span class="eyebrow-dot"></span> FIELD NOTES</p>
+            <h2>See it come alive.</h2>
+          </div>
+          <p>This page is ready for your end-to-end installation recording, orb close-ups, and GPU setup demos. Drop the files into <code>html/media/videos/</code>.</p>
+        </div>
+        <div class="media-grid">
+          <article class="media-card media-card-wide">
+            <div class="media-slot media-slot-install"><video class="media-video" controls preload="metadata" aria-label="End-to-end installation recording"><source src="media/videos/installation.mp4" type="video/mp4"></video><span class="slot-kicker">VIDEO / 01</span><div><strong>End-to-end installation</strong><small>media/videos/installation.mp4</small></div></div>
+            <div class="media-card-copy"><span>START HERE</span><h3>From fresh checkout to first voice.</h3><p>The complete install, setup, and first response in one take.</p></div>
+          </article>
+          <article class="media-card">
+            <div class="media-slot media-slot-orb"><video class="media-video" controls preload="metadata" aria-label="Voice swap recording"><source src="media/videos/voice-swap.mp4" type="video/mp4"></video><span class="slot-kicker">VIDEO / 02</span><div><strong>Voice swap</strong><small>media/videos/voice-swap.mp4</small></div></div>
+            <div class="media-card-copy"><span>THE VOICE</span><h3>Try a different timbre.</h3><p>Change the local voice while the rest of the presence stays alive.</p></div>
+          </article>
+          <article class="media-card">
+            <div class="media-slot media-slot-arc"><video class="media-video" controls preload="metadata" aria-label="Other Codex instance recording"><source src="media/videos/other-instance.mp4" type="video/mp4"></video><span class="slot-kicker">VIDEO / 03</span><div><strong>Other instance</strong><small>media/videos/other-instance.mp4</small></div></div>
+            <div class="media-card-copy"><span>THE WORKFLOW</span><h3>A second instance, same presence.</h3><p>Show how the local voice layer follows the project it is attached to.</p></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="install-section" id="install">
+        <div>
+          <p class="eyebrow"><span class="eyebrow-dot"></span> START SMALL</p>
+          <h2>One skill. One worker. One living response.</h2>
+          <p>Clone the skill, install the local runtime, and enable the voice workflow from your Codex chat. The full instructions live in the repository README.</p>
+        </div>
+        <div class="code-card">
+          <div class="code-card-top"><span>TERMINAL</span><span class="code-dots">● ● ●</span></div>
+          <pre><code><span class="code-muted">$</span> git clone https://github.com/walkingIssue/Codex-AI-presence
+<span class="code-muted">$</span> codex skills install ./Codex-AI-presence/skills/codex-voice
+<span class="code-muted">$</span> python scripts/setup_voice.py
+<span class="code-green">ready</span>  local presence worker online</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>CODEX AI PRESENCE <span class="footer-muted">/ LOCAL VOICE + VISUAL PRESENCE</span></span>
+      <a href="https://github.com/walkingIssue/Codex-AI-presence" target="_blank" rel="noreferrer">Source on GitHub ↗</a>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

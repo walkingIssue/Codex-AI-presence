@@ -11,6 +11,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from session_scope import (
+    is_project_mode,
+    load_state,
+    registered_session_ids,
+    state_path,
+)
+
 
 POLL_SECONDS = 0.4
 
@@ -28,25 +35,63 @@ def normal_path(value: str | Path) -> str:
     return os.path.normcase(os.path.abspath(os.fspath(value)))
 
 
-def is_project_session(path: Path, project_root: Path) -> bool:
+_SESSION_METADATA_CACHE: dict[Path, tuple[int, str | None, str | None]] = {}
+
+
+def session_metadata(path: Path) -> tuple[str | None, str | None]:
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return None, None
+    cached = _SESSION_METADATA_CACHE.get(path)
+    if cached is not None and cached[0] == size:
+        return cached[1], cached[2]
     try:
         with path.open("r", encoding="utf-8") as handle:
             first = json.loads(handle.readline())
-        cwd = first.get("payload", {}).get("cwd")
-        return isinstance(cwd, str) and normal_path(cwd) == normal_path(project_root)
+        payload = first.get("payload", {})
+        cwd = payload.get("cwd") if isinstance(payload, dict) else None
+        session_id = payload.get("session_id", payload.get("id")) if isinstance(payload, dict) else None
+        cwd = cwd if isinstance(cwd, str) else None
+        session_id = session_id if isinstance(session_id, str) else None
     except (OSError, json.JSONDecodeError, AttributeError):
+        cwd, session_id = None, None
+    _SESSION_METADATA_CACHE[path] = (size, cwd, session_id)
+    return cwd, session_id
+
+
+def is_project_session(
+    path: Path,
+    project_root: Path,
+    allowed_session_ids: set[str] | None = None,
+) -> bool:
+    cwd, session_id = session_metadata(path)
+    if not isinstance(cwd, str) or normal_path(cwd) != normal_path(project_root):
         return False
+    return allowed_session_ids is None or session_id in allowed_session_ids
 
 
-def session_files(project_root: Path) -> list[Path]:
+def session_files(project_root: Path, scope_state: dict) -> list[Path]:
     root = Path.home() / ".codex" / "sessions"
     if not root.is_dir():
         return []
-    candidates: list[Path] = []
-    for path in root.rglob("rollout-*.jsonl"):
-        if path.is_file() and is_project_session(path, project_root):
-            candidates.append(path)
-    return candidates
+    allowed_session_ids = registered_session_ids(scope_state)
+    if is_project_mode(scope_state):
+        paths = root.rglob("rollout-*.jsonl")
+        allowed_session_ids = None
+    else:
+        if not allowed_session_ids:
+            return []
+        paths = (
+            path
+            for thread_id in allowed_session_ids
+            for path in root.rglob(f"rollout-*-{thread_id}.jsonl")
+        )
+    candidates: dict[Path, None] = {}
+    for path in paths:
+        if path.is_file() and is_project_session(path, project_root, allowed_session_ids):
+            candidates[path] = None
+    return list(candidates)
 
 
 def timestamp_seconds(value: object) -> float | None:
@@ -323,6 +368,24 @@ def marker_enabled(voice_root: Path) -> bool:
         return False
 
 
+def scope_mtime(voice_root: Path) -> int | None:
+    try:
+        return state_path(voice_root).stat().st_mtime_ns
+    except OSError:
+        return None
+
+
+def initial_offset(path: Path, start_time: float) -> int:
+    try:
+        stat = path.stat()
+    except OSError:
+        return 0
+    # Existing sessions begin at their current end. New rollouts, or a file
+    # updated after activation, are read from the beginning and filtered by
+    # record timestamp so activation never replays old responses.
+    return stat.st_size if stat.st_mtime < start_time else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project-root", required=True, type=Path)
@@ -338,55 +401,89 @@ def main() -> int:
     log(voice_root, f"visible progress: {'on' if progress_enabled(voice_root) else 'off'}")
     log(voice_root, f"provider: {configured_provider(voice_root)}")
 
-    active: Path | None = None
-    offset = 0
-    partial = b""
-    seen: set[tuple[str, str, str]] = set()
+    scope_state = load_state(voice_root)
+    scope_state_mtime = scope_mtime(voice_root)
+    log(
+        voice_root,
+        f"scope: {'project' if is_project_mode(scope_state) else 'session'} "
+        f"({len(registered_session_ids(scope_state))} registered sessions)",
+    )
+    streams: dict[Path, tuple[int, bytes]] = {}
+    announced: set[Path] = set()
+    seen: set[tuple[str, str, str, str]] = set()
     worker = TTSWorker(project_root, voice_root)
     worker.start()
 
     try:
         while marker_enabled(voice_root):
-            candidates = session_files(project_root)
-            if candidates:
-                current = max(candidates, key=lambda path: path.stat().st_mtime_ns)
-                if current != active:
-                    active = current
-                    offset = 0
-                    partial = b""
-                    log(voice_root, f"watching {current.name}")
+            current_scope_mtime = scope_mtime(voice_root)
+            if current_scope_mtime != scope_state_mtime:
+                scope_state = load_state(voice_root)
+                scope_state_mtime = current_scope_mtime
+                streams.clear()
+                announced.clear()
+                log(
+                    voice_root,
+                    f"scope changed: {'project' if is_project_mode(scope_state) else 'session'} "
+                    f"({len(registered_session_ids(scope_state))} registered sessions)",
+                )
 
-                offset, partial, records = read_new_records(active, offset, partial)
+            candidates = session_files(project_root, scope_state)
+            candidate_set = set(candidates)
+            for path in list(streams):
+                if path not in candidate_set:
+                    streams.pop(path, None)
+                    announced.discard(path)
+
+            events: list[tuple[float | None, Path, dict]] = []
+            for path in sorted(candidates, key=str):
+                if path not in streams:
+                    streams[path] = (initial_offset(path, args.start_time), b"")
+                    if path not in announced:
+                        announced.add(path)
+                        log(voice_root, f"watching {path.name}")
+                offset, partial = streams[path]
+                offset, partial, records = read_new_records(path, offset, partial)
+                streams[path] = (offset, partial)
                 for record in records:
-                    record_time = timestamp_seconds(record.get("timestamp"))
-                    if record_time is not None and record_time < args.start_time:
-                        continue
-                    commentary = commentary_message(record) if progress_enabled(voice_root) else None
-                    if commentary is not None:
-                        key = (str(active), str(record.get("timestamp")), "commentary", commentary)
-                        if key not in seen:
-                            seen.add(key)
-                            volume = round(configured_volume() * 0.5)
-                            log(voice_root, f"speaking visible commentary at {volume}%: {len(commentary)} characters")
-                            speak(
-                                project_root,
-                                voice_root,
-                                commentary,
-                                volume=volume,
-                                label="commentary",
-                                worker=worker,
-                            )
-                        continue
+                    events.append((timestamp_seconds(record.get("timestamp")), path, record))
 
-                    message = final_message(record)
-                    if message is None:
-                        continue
-                    key = (str(active), str(record.get("timestamp")), "final_answer", message)
-                    if key in seen:
-                        continue
-                    seen.add(key)
-                    log(voice_root, f"speaking final answer: {len(message)} characters")
-                    speak(project_root, voice_root, message, worker=worker)
+            events.sort(
+                key=lambda item: (
+                    item[0] is None,
+                    item[0] if item[0] is not None else 0,
+                    str(item[1]),
+                )
+            )
+            for record_time, path, record in events:
+                if record_time is not None and record_time < args.start_time:
+                    continue
+                commentary = commentary_message(record) if progress_enabled(voice_root) else None
+                if commentary is not None:
+                    key = (str(path), str(record.get("timestamp")), "commentary", commentary)
+                    if key not in seen:
+                        seen.add(key)
+                        volume = round(configured_volume() * 0.5)
+                        log(voice_root, f"speaking visible commentary at {volume}%: {len(commentary)} characters")
+                        speak(
+                            project_root,
+                            voice_root,
+                            commentary,
+                            volume=volume,
+                            label="commentary",
+                            worker=worker,
+                        )
+                    continue
+
+                message = final_message(record)
+                if message is None:
+                    continue
+                key = (str(path), str(record.get("timestamp")), "final_answer", message)
+                if key in seen:
+                    continue
+                seen.add(key)
+                log(voice_root, f"speaking final answer: {len(message)} characters")
+                speak(project_root, voice_root, message, worker=worker)
             time.sleep(POLL_SECONDS)
         log(voice_root, "stopping: voice marker is off")
     except KeyboardInterrupt:

@@ -13,6 +13,8 @@ import urllib.request
 import venv
 from pathlib import Path
 
+from session_scope import ensure_state_file
+
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_ROOT = Path(__file__).resolve().parent
@@ -32,6 +34,7 @@ orb.enabled
 kokoro-v1.0*.onnx
 voices-v1.0.bin
 gpu_patch/*.onnx
+sessions.json
 """
 ORB_FILES = (
     "index.html",
@@ -94,6 +97,33 @@ def download(url: str, destination: Path) -> None:
 def write_default(path: Path, value: str) -> None:
     if not path.exists():
         path.write_text(value, encoding="utf-8")
+
+
+def electron_binary(orb_root: Path) -> Path:
+    if os.name == "nt":
+        return orb_root / "node_modules" / "electron" / "dist" / "electron.exe"
+    if sys.platform == "darwin":
+        return orb_root / "node_modules" / "electron" / "dist" / "Electron.app" / "Contents" / "MacOS" / "Electron"
+    return orb_root / "node_modules" / "electron" / "dist" / "electron"
+
+
+def repair_electron_runtime(orb_root: Path) -> bool:
+    """Run Electron's postinstall explicitly when npm skipped the binary download."""
+    binary = electron_binary(orb_root)
+    if binary.is_file():
+        return True
+
+    install_script = orb_root / "node_modules" / "electron" / "install.js"
+    node = shutil.which("node")
+    if node is None or not install_script.is_file():
+        return False
+
+    print("Electron runtime is missing; running Electron's installer...")
+    run([node, str(install_script)], cwd=orb_root, check=False)
+    if binary.is_file():
+        print(f"Electron runtime ready: {binary}")
+        return True
+    return False
 
 
 def install_hook(project_root: Path, voice_root: Path, force: bool) -> None:
@@ -176,6 +206,11 @@ def install_orb(voice_root: Path, skip: bool) -> None:
     result = run([npm, "ci"], cwd=destination, check=False)
     if result.returncode != 0:
         print("Orb dependency installation failed; voice setup is still usable.")
+    if not repair_electron_runtime(destination):
+        print(
+            "Electron's platform binary is unavailable; voice setup is still usable, "
+            "but the orb needs a successful npm install and Electron download."
+        )
 
 
 def install_start_script(voice_root: Path) -> None:
@@ -256,6 +291,7 @@ def main() -> int:
     voice_root = project_root / ".codex-voice"
     voice_root.mkdir(parents=True, exist_ok=True)
     write_default(voice_root / ".gitignore", VOICE_GITIGNORE)
+    ensure_state_file(voice_root)
 
     model = voice_root / MODEL_NAME
     voices = voice_root / VOICES_NAME
