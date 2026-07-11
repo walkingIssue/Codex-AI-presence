@@ -1,4 +1,4 @@
-kokoro-onnx==0.5.0
+# kokoro-onnx is installed from the Intel Arc fork by setup.py with --no-deps.
 numpy==2.5.1
 onnx==1.22.0
 onnxruntime-directml==1.24.4

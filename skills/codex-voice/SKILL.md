@@ -29,8 +29,9 @@ python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml --enable
 CPU is the validated baseline. The NVIDIA CUDA path uses a separate
 `.cuda-venv`, `CUDAExecutionProvider`, and the base INT8 model; it is included
 for NVIDIA users but is untested on the maintainer's hardware. The DirectML
-path uses a separate `.dml-venv` and a generated local graph patch. Do not
-describe the DirectML patch as an upstream Kokoro contribution.
+path uses a separate `.dml-venv` and a generated local graph patch. The setup
+pulls the maintained [Intel Arc Kokoro fork](https://github.com/walkingIssue/kokoro-onnx-intel-arc/tree/intel-arc-directml).
+Do not describe the DirectML patch as an upstream Kokoro contribution yet.
 
 ## Controls
 

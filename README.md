@@ -50,7 +50,7 @@ For the current Intel Arc/DirectML experiment:
 python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml --enable
 ```
 
-That generates the local DirectML graph patch; it is intentionally not an upstream Kokoro pull request yet.
+That installs the maintained [Intel Arc Kokoro fork](https://github.com/walkingIssue/kokoro-onnx-intel-arc/tree/intel-arc-directml), removes the CPU ONNX Runtime wheel from the DirectML environment, and generates the local graph patch. It is intentionally not an upstream Kokoro pull request yet.
 
 ## Controls
 

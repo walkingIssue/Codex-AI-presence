@@ -18,6 +18,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_ROOT = Path(__file__).resolve().parent
 MODEL_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx"
 VOICES_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+DIRECTML_KOKORO_URL = "git+https://github.com/walkingIssue/kokoro-onnx-intel-arc.git@intel-arc-directml"
 MODEL_NAME = "kokoro-v1.0.int8.onnx"
 VOICES_NAME = "voices-v1.0.bin"
 VOICE_GITIGNORE = """.venv/
@@ -196,6 +197,30 @@ def setup_directml(voice_root: Path, model: Path) -> None:
     environment = voice_root / ".dml-venv"
     python = ensure_environment(environment)
     install_requirements(python, SKILL_ROOT / "requirements-directml.txt")
+    # The fork inherits the CPU ORT dependency from upstream. Keep the
+    # DirectML wheel as the only ONNX Runtime implementation in this env.
+    run([str(python), "-m", "pip", "uninstall", "-y", "onnxruntime"], check=False)
+    run(
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "onnxruntime-directml==1.24.4",
+        ]
+    )
+    run(
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "--no-deps",
+            DIRECTML_KOKORO_URL,
+        ]
+    )
     patched = voice_root / "gpu_patch" / "kokoro-v1.0.int8.dml-conv2d.onnx"
     run(
         [
