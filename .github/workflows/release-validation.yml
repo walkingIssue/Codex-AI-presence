@@ -1,0 +1,25 @@
+name: Release validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - skills/codex-voice/**
+      - .github/workflows/release-validation.yml
+  push:
+    branches: [main]
+    paths:
+      - skills/codex-voice/**
+      - .github/workflows/release-validation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Run the lab release gate
+    uses: walkingIssue/Codex-AI-presence-lab/.github/workflows/e2e.yml@main
+    with:
+      source-repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+      source-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
