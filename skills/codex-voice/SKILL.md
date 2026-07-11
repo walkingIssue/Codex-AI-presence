@@ -1,6 +1,6 @@
 ---
 name: codex-voice
-description: Set up and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex, with full voice, speed, volume, commentary-volume, playback, scope, progress, and provider configuration. Use when the user asks to enable, disable, configure, install, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
+description: Set up, uninstall, and control project-local Kokoro voice output and the optional WebGL Strand Orb for Codex, with full voice, speed, volume, commentary-volume, playback, scope, progress, and provider configuration. Use when the user asks to enable, disable, configure, install, clean up, troubleshoot, or speak Codex responses aloud, including CPU, NVIDIA CUDA, or Intel DirectML provider selection.
 ---
 
 # Codex AI Presence
@@ -18,6 +18,10 @@ python "$HOME/.codex/skills/codex-voice/scripts/setup.py"
 
 Use `--force` only when setup reports a different existing `.codex/hooks/speak.py`.
 Use `--no-orb` when the machine should not install the optional Electron orb.
+Setup selects Python 3.11 or 3.12 for the isolated environments because the
+current Kokoro package pins do not support Python 3.13+. Use `--python PATH` to
+choose a specific compatible interpreter when automatic selection is not
+available.
 
 After setup, ask the user which voice scope they want before enabling it:
 
@@ -41,6 +45,21 @@ for NVIDIA users but is untested on the maintainer's hardware. The DirectML
 path uses a separate `.dml-venv` and a generated local graph patch. The setup
 pulls the maintained [Intel Arc Kokoro fork](https://github.com/walkingIssue/kokoro-onnx-intel-arc/tree/intel-arc-directml).
 Do not describe the DirectML patch as an upstream Kokoro contribution yet.
+
+## Uninstall and clean up
+
+To remove the project-local integration after a failed or superseded install, run:
+
+```powershell
+python "$HOME/.codex/skills/codex-voice/scripts/uninstall.py" --yes
+```
+
+The uninstaller stops the watcher and Orb, removes only the registered Codex
+voice Stop hook, restores a hook backed up by setup, and removes the local
+`.codex-voice` directory with its models and virtual environments. It refuses
+to remove a changed `speak.py` unless `--force` is supplied. Use
+`--keep-assets` when only the hook and runtime markers should be removed while
+retaining downloaded models and environments.
 
 ## Configuration
 
