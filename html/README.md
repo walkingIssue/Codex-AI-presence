@@ -18,6 +18,6 @@ The showcase currently embeds these compressed recordings from `media/videos/`:
 
 Replace or add recordings using the same names, or update the `<source>` paths in `index.html`.
 
-Still images can go in `media/screenshots/`. The repository did not retain the old voice/orb debugging screenshots, so the first version uses designed media placeholders rather than unrelated local images. Replace those placeholders with verified screenshots or video poster frames when the recordings are ready.
+Verified orb captures live in `media/screenshots/`: `orb-idle.png` shows the quiet baseline and `orb-speaking.png` shows the brighter geometric response during Isabella playback. Add further stills there as the showcase grows.
 
 The page is deliberately plain HTML, CSS, and JavaScript so it can also be hosted as a GitHub Pages site later without changing the showcase source.

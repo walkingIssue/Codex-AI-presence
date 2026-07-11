@@ -4,6 +4,16 @@ A project-local Codex skill for fast Kokoro voice output, optional visible-progr
 
 The repository deliberately does not contain the 88 MB Kokoro model or voice bundle. The setup script downloads them from the upstream `kokoro-onnx` model release when the skill is installed. See the [Kokoro ONNX repository](https://github.com/thewh1teagle/kokoro-onnx) and its [model release](https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0).
 
+## What the Strand Orb looks like
+
+The Strand Orb is the optional transparent Electron/WebGL companion window for the local voice worker. It stays quietly visible while idle, with a dim luminous ring and a slow breathing pulse. During playback, the same audio stream drives the geometry: the strands brighten, become more angular, and deform in sync with Isabella's speech.
+
+| Idle | Speaking |
+| --- | --- |
+| ![Strand Orb idle state](html/media/screenshots/orb-idle.png) | ![Strand Orb speaking state](html/media/screenshots/orb-speaking.png) |
+
+The visual is intentionally small enough to sit beside an editor while still making the voice state legible at a glance.
+
 ## Install the skill
 
 In a Codex session, ask it to install:
@@ -25,10 +35,10 @@ python "$HOME/.codex/skills/.system/skill-installer/scripts/install-skill-from-g
 Run this from the project where voice should be enabled:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --enable
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py"
 ```
 
-The setup creates an isolated project-local runtime, downloads the INT8 model and voices, installs a project-local Stop hook, and optionally installs the orb dependencies. It preserves an existing different `speak.py` by requiring `--force` before replacing it.
+The setup creates an isolated project-local runtime, downloads the INT8 model and voices, installs a project-local Stop hook, and optionally installs the orb dependencies. The Codex skill then asks whether voice should apply only to the current session or to all sessions in the project. It preserves an existing different `speak.py` by requiring `--force` before replacing it.
 
 The machine needs `ffplay` on `PATH` for playback. Node.js/npm are optional unless the Strand Orb is wanted.
 
@@ -39,7 +49,7 @@ CPU is the default and is the validated baseline.
 For NVIDIA CUDA 12.x, use the optional CUDA runtime:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --cuda --enable
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --cuda
 ```
 
 This installs `onnxruntime-gpu[cuda,cudnn]`, selects `CUDAExecutionProvider`, and keeps the CPU runtime available as a fallback. The CUDA path is included but untested on the maintainer’s hardware.
@@ -47,7 +57,7 @@ This installs `onnxruntime-gpu[cuda,cudnn]`, selects `CUDAExecutionProvider`, an
 For the current Intel Arc/DirectML experiment:
 
 ```powershell
-python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml --enable
+python "$HOME/.codex/skills/codex-voice/scripts/setup.py" --directml
 ```
 
 That installs the maintained [Intel Arc Kokoro fork](https://github.com/walkingIssue/kokoro-onnx-intel-arc/tree/intel-arc-directml), removes the CPU ONNX Runtime wheel from the DirectML environment, and generates the local graph patch. It is intentionally not an upstream Kokoro pull request yet.
@@ -56,8 +66,12 @@ That installs the maintained [Intel Arc Kokoro fork](https://github.com/walkingI
 
 ```powershell
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" status
-python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" on
-python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" session-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" session-off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" project-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" project-off
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" on             # alias for session-on
+python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" off            # alias for project-off
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" stream
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" quality
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" provider-cpu
@@ -66,5 +80,7 @@ python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" provider-directml
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" progress-on
 python "$HOME/.codex/skills/codex-voice/scripts/toggle.py" orb-on
 ```
+
+`session-on` registers the current Codex thread in `.codex-voice/sessions.json`. `project-on` is the explicit always-on mode for all matching sessions in the project.
 
 The eventual Codex app-server bridge can feed public agent-message deltas into the same persistent voice worker and playback-synchronized orb.
